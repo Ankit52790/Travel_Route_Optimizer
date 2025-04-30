@@ -142,17 +142,25 @@ if st.session_state.all_locations:
                     initial_view_state=view, layers=[path_layer, point_layer]
                 )
                 st.pydeck_chart(deck, use_container_width=True)
+                # 💾 Input route name before saving
+                route_name = st.text_input("📝 Enter a name for this route", placeholder="e.g., Golden Triangle Trip")
+
 
                 # 💾 Save route to backend
                 if st.button("💾 Save Route to Server"):
-                    save_res = requests.post(
-                        "http://localhost:8000/save_route",
-                        json={"route": optimized}
-                    )
-                    if save_res.ok and save_res.json().get("status") == "saved":
-                        st.success("✅ Route saved on server.")
+                    if not route_name.strip():
+                        st.warning("❗ Please enter a name for the route before saving.")
                     else:
-                        st.error("❌ Failed to save route.")
+                        save_res = requests.post(
+                            "http://localhost:8000/save_route",
+                            json={"route": optimized, "route_name": route_name.strip()}
+                        )
+                        if save_res.ok and save_res.json().get("status") == "saved":
+                            st.success(f"✅ Route '{route_name}' saved on server.")
+                        else:
+                            st.error("❌ Failed to save route.")    
+                            
+                    
 
                 # ⬇️ Download as CSV
                 csv = df.to_csv(index=False).encode("utf-8")
@@ -166,3 +174,25 @@ if st.session_state.all_locations:
         if st.button("🗑️ Clear All Locations"):
             st.session_state.all_locations.clear()
             st.info("🧹 All locations cleared.")
+            # 📚 Show saved routes
+with st.expander("📚 View All Saved Routes"):
+    if st.button("🔄 Refresh List"):
+        try:
+            res = requests.get("http://localhost:8000/get_routes")
+            if res.ok:
+                saved_routes = res.json().get("routes", [])
+                if not saved_routes:
+                    st.info("ℹ️ No saved routes found.")
+                else:
+                    for idx, route_entry in enumerate(saved_routes, 1):
+                        name = route_entry.get("name", f"Route {idx}")
+                        route = route_entry.get("route", [])
+                        st.markdown(f"**{idx}. {name}** ({len(route)} points)")
+                        with st.expander("Show Coordinates"):
+                            for point in route:
+                                st.write(f"- Lat: {point['lat']}, Lon: {point['lng']}")
+            else:
+                st.error("⚠️ Failed to fetch routes.")
+        except Exception as e:
+            st.error(f"⚠️ Error: {e}")
+
