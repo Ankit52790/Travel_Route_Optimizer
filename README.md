@@ -1,4 +1,4 @@
-# 🚗 Travel Route Optimizer
+# 🚗	TravelSafari
 
 A full-stack web application that helps users plan efficient multi-stop travel routes. Enter city names or click on the map to add locations, then optimize the visiting order using a genetic algorithm. Visualize distances and paths interactively, save your routes to the server, or export them as CSV/JSON.
 
